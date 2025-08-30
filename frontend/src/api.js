@@ -1,4 +1,4 @@
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 export async function fetchItems() {
   const res = await fetch(`${API_URL}/items`);
@@ -29,7 +29,7 @@ export async function deleteItem(id) {
 }
 
 export async function submitInvoice(invoiceData) {
-  const res = await fetch('http://127.0.0.1:8000/invoices', {
+  const res = await fetch(`${API_URL}/invoices`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(invoiceData),
@@ -39,13 +39,13 @@ export async function submitInvoice(invoiceData) {
 }
 
 export async function fetchSalesTracker() {
-  const res = await fetch('http://127.0.0.1:8000/sales-tracker');
+  const res = await fetch(`${API_URL}/sales-tracker`);
   if (!res.ok) throw new Error('Failed to fetch sales tracker');
   return res.json();
 }
 
 export async function fetchInvoicesByDate(date) {
-  const res = await fetch(`http://127.0.0.1:8000/invoices/by-date?date=${date}`);
+  const res = await fetch(`${API_URL}/invoices/by-date?date=${date}`);
   if (!res.ok) throw new Error('Failed to fetch invoices for date');
   return res.json();
 }
