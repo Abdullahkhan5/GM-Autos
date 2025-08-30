@@ -344,15 +344,7 @@ function Dashboard({ onNavigate }) {
     return (
       <div className="App" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
         <div className="card" style={{ textAlign: 'center', margin: '50px auto', padding: '50px' }}>
-          <div style={{ 
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #333333',
-            borderRadius: '50%',
-            width: '50px',
-            height: '50px',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px'
-          }}></div>
+          <div className="dashboard-loading-spinner"></div>
           <p>Loading dashboard...</p>
         </div>
       </div>
