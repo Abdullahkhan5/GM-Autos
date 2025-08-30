@@ -34,7 +34,7 @@ class ItemResponse(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CustomerBase(BaseModel):
     name: str
@@ -64,7 +64,7 @@ class CustomerResponse(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class InvoiceItemCreate(BaseModel):
     productId: int
@@ -96,7 +96,7 @@ class InvoiceItemResponse(BaseModel):
     item: ItemResponse
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class InvoiceResponse(BaseModel):
     id: int
@@ -111,4 +111,17 @@ class InvoiceResponse(BaseModel):
     items: list[InvoiceItemResponse]
 
     class Config:
-        orm_mode = True 
+        from_attributes = True
+
+# Payment update schema
+class PaymentUpdate(BaseModel):
+    amount_paid: float
+
+# Customer payment schema - for paying across multiple invoices
+class CustomerPayment(BaseModel):
+    customer_id: int
+    payment_amount: float
+
+# Invoice customer assignment
+class InvoiceCustomerAssignment(BaseModel):
+    customer_id: int

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchItems, addItem, updateItem, submitInvoice, fetchSalesTracker, fetchInvoicesByDate, fetchCustomers, addCustomer, updateCustomer, deleteCustomer, fetchCustomerOutstandingBalance } from './api';
+import { fetchItems, addItem, updateItem, submitInvoice, fetchSalesTracker, fetchInvoicesByDate, fetchCustomers, addCustomer, updateCustomer, deleteCustomer, fetchCustomerOutstandingBalance, updateInvoicePayment } from './api';
 import { Search, Plus, Edit3, Trash2, Package, Wrench, Droplet, Car, User, Phone, Mail, MapPin } from 'lucide-react';
 import './App.css';
 import Dashboard from './dashboard.jsx';
@@ -1015,42 +1015,6 @@ function SalesInvoiceForm({ items = [], onBack, onInvoiceCreated }) {
                   <h4 style={{ margin: '0 0 0.5rem 0', color: '#0c4a6e' }}>Selected Customer:</h4>
                   <p style={{ margin: '0 0 0.25rem 0', fontWeight: '500' }}>{clientName}</p>
                   {clientPhone && <p style={{ margin: '0 0 0.5rem 0', color: '#64748b' }}>{clientPhone}</p>}
-                  
-                  {/* Outstanding Balance Display */}
-                  <div style={{
-                    borderTop: '1px solid #e0f2fe',
-                    paddingTop: '0.5rem',
-                    marginTop: '0.5rem'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <span style={{ color: '#0c4a6e', fontWeight: '500' }}>Outstanding Balance:</span>
-                      {loadingOutstanding ? (
-                        <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading...</span>
-                      ) : (
-                        <span style={{
-                          fontWeight: '600',
-                          color: outstandingBalance > 0 ? '#dc2626' : '#059669',
-                          fontSize: '1rem'
-                        }}>
-                          Rs. {outstandingBalance.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                    {outstandingBalance > 0 && (
-                      <p style={{
-                        margin: '0.25rem 0 0 0',
-                        fontSize: '0.75rem',
-                        color: '#dc2626',
-                        fontStyle: 'italic'
-                      }}>
-                        Previous unpaid amount: Rs. {outstandingBalance.toLocaleString()}
-                      </p>
-                    )}
-                  </div>
                 </div>
               )}
             </div>
@@ -1296,6 +1260,50 @@ function SalesInvoiceForm({ items = [], onBack, onInvoiceCreated }) {
                 Rs. {calculateTotal().toFixed(2)}
               </span>
             </div>
+
+            {/* Customer Outstanding Balance */}
+            {customerType === 'regular' && selectedCustomerId && (
+              <div style={{
+                borderTop: '1px solid #f3f4f6',
+                paddingTop: '1rem',
+                marginTop: '1rem'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#dc2626'
+                  }}>
+                    Customer Outstanding Balance:
+                  </span>
+                  {loadingOutstanding ? (
+                    <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading...</span>
+                  ) : (
+                    <span style={{
+                      fontWeight: '700',
+                      color: outstandingBalance > 0 ? '#dc2626' : '#059669',
+                      fontSize: '1.25rem'
+                    }}>
+                      Rs. {outstandingBalance.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                {outstandingBalance > 0 && (
+                  <p style={{
+                    margin: '0.5rem 0 0 0',
+                    fontSize: '0.875rem',
+                    color: '#dc2626',
+                    fontStyle: 'italic'
+                  }}>
+                    This includes previous unpaid invoices
+                  </p>
+                )}
+              </div>
+            )}
             
             {/* Payment Amount */}
             <div style={{
@@ -1748,6 +1756,62 @@ function ChangePassword({ onSuccess, onCancel }) {
   );
 }
 
+function SessionTimer() {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const authExpiry = localStorage.getItem('adminAuthExpiry');
+      if (!authExpiry) {
+        setTimeLeft('');
+        return;
+      }
+
+      const currentTime = new Date().getTime();
+      const expiryTime = parseInt(authExpiry);
+      const timeDiff = expiryTime - currentTime;
+
+      if (timeDiff <= 0) {
+        setTimeLeft('Expired');
+        return;
+      }
+
+      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+      if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m`);
+      } else if (minutes > 0) {
+        setTimeLeft(`${minutes}m ${seconds}s`);
+      } else {
+        setTimeLeft(`${seconds}s`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!timeLeft) return null;
+
+  return (
+    <div style={{
+      padding: '0.5rem 1rem',
+      background: timeLeft.includes('Expired') ? '#dc2626' : 
+                  (parseInt(timeLeft) <= 5 && timeLeft.includes('s')) ? '#f59e0b' : '#059669',
+      color: 'white',
+      borderRadius: '6px',
+      fontSize: '0.875rem',
+      fontWeight: '500'
+    }}>
+      🕒 {timeLeft}
+    </div>
+  );
+}
+
 function AdminPortal({ items, onAddItem, onEditItem, onDeleteItem, loading, onViewDetails, onInvoiceCreated, onBack }) {
   const [adminView, setAdminView] = useState('overview');
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -1807,7 +1871,8 @@ function AdminPortal({ items, onAddItem, onEditItem, onDeleteItem, loading, onVi
           <h2 className="modern-inventory-page-title">Admin Portal</h2>
           <p className="modern-inventory-page-description">Administrative tools and management</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <SessionTimer />
           <button 
             onClick={() => setShowChangePassword(true)}
             className="modern-inventory-add-btn"
@@ -1818,28 +1883,49 @@ function AdminPortal({ items, onAddItem, onEditItem, onDeleteItem, loading, onVi
         </div>
       </div>
 
-      {/* Admin Navigation */}
-      {adminView !== 'invoices' && adminView !== 'invoice-details' && (
-        <div className="modern-inventory-filters" style={{ marginBottom: '2rem' }}>
-          {adminMenuItems.map((item) => {
-            const isActive = adminView === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setAdminView(item.id)}
-                className={`modern-inventory-filter-btn ${isActive ? 'active' : ''}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.75rem 1.5rem'
-                }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
-                {item.label}
-              </button>
-            );
-          })}
+      {/* Admin Navigation - Always visible */}
+      <div className="modern-inventory-filters" style={{ marginBottom: '2rem' }}>
+        {adminMenuItems.map((item) => {
+          const isActive = adminView === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => {
+                setAdminView(item.id);
+                // Clear selected date when navigating away from invoice details
+                if (item.id !== 'invoice-details') {
+                  setSelectedDate(null);
+                }
+              }}
+              className={`modern-inventory-filter-btn ${isActive ? 'active' : ''}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.5rem'
+              }}
+            >
+              <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Breadcrumb for specific views */}
+      {adminView === 'invoice-details' && selectedDate && (
+        <div style={{ 
+          marginBottom: '1rem', 
+          padding: '0.75rem 1rem', 
+          background: '#f8fafc', 
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b' }}>
+            <span>📈 Sales Tracker</span>
+            <span>→</span>
+            <span style={{ color: '#1f2937', fontWeight: '500' }}>Invoice Details - {selectedDate}</span>
+          </div>
         </div>
       )}
 
@@ -2226,12 +2312,105 @@ function PurchaseManagement({ items, onAddItem, onEditItem, onDeleteItem }) {
   );
 }
 
+function PaymentUpdateButton({ invoiceId, currentPaid, totalAmount, onUpdate }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [newPaidAmount, setNewPaidAmount] = useState(currentPaid || 0);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleUpdate = async () => {
+    if (newPaidAmount < 0 || newPaidAmount > totalAmount) {
+      alert('Payment amount must be between 0 and total amount');
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await updateInvoicePayment(invoiceId, parseFloat(newPaidAmount));
+      setIsEditing(false);
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      console.error('Failed to update payment:', error);
+      alert('Failed to update payment');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (!isEditing) {
+    return (
+      <button
+        onClick={() => setIsEditing(true)}
+        style={{
+          padding: '0.25rem 0.5rem',
+          backgroundColor: '#2563eb',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          cursor: 'pointer'
+        }}
+      >
+        Update Payment
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+      <input
+        type="number"
+        value={newPaidAmount}
+        onChange={(e) => setNewPaidAmount(e.target.value)}
+        min="0"
+        max={totalAmount}
+        step="0.01"
+        style={{
+          width: '80px',
+          padding: '0.25rem',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          fontSize: '0.75rem'
+        }}
+      />
+      <button
+        onClick={handleUpdate}
+        disabled={isUpdating}
+        style={{
+          padding: '0.25rem 0.5rem',
+          backgroundColor: '#10b981',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          cursor: isUpdating ? 'not-allowed' : 'pointer'
+        }}
+      >
+        {isUpdating ? '...' : '✓'}
+      </button>
+      <button
+        onClick={() => setIsEditing(false)}
+        style={{
+          padding: '0.25rem 0.5rem',
+          backgroundColor: '#dc2626',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          cursor: 'pointer'
+        }}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function InvoiceDetailsTab({ selectedDate, onBack }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchInvoices = () => {
     if (selectedDate) {
       setLoading(true);
       setError(null);
@@ -2240,6 +2419,10 @@ function InvoiceDetailsTab({ selectedDate, onBack }) {
         .catch(e => setError(e.message))
         .finally(() => setLoading(false));
     }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
   }, [selectedDate]);
 
   if (loading) return (
@@ -2350,19 +2533,21 @@ function InvoiceDetailsTab({ selectedDate, onBack }) {
                           <tr>
                             <td colSpan={4}><strong>Payment Status</strong></td>
                             <td>
-                              <span style={{
-                                padding: '0.25rem 0.75rem',
-                                borderRadius: '9999px',
-                                fontSize: '0.75rem',
-                                fontWeight: '500',
-                                color: 'white',
-                                backgroundColor: 
-                                  paymentStatus === 'paid' ? '#10b981' :
-                                  paymentStatus === 'partial' ? '#f59e0b' : '#dc2626'
-                              }}>
-                                {paymentStatus === 'paid' ? '✓ Paid' :
-                                 paymentStatus === 'partial' ? '⚠ Partial' : '⚠ Unpaid'}
-                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{
+                                  padding: '0.25rem 0.75rem',
+                                  borderRadius: '9999px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: '500',
+                                  color: 'white',
+                                  backgroundColor: 
+                                    paymentStatus === 'paid' ? '#10b981' :
+                                    paymentStatus === 'partial' ? '#f59e0b' : '#dc2626'
+                                }}>
+                                  {paymentStatus === 'paid' ? '✓ Paid' :
+                                   paymentStatus === 'partial' ? '⚠ Partial' : '⚠ Unpaid'}
+                                </span>
+                              </div>
                             </td>
                           </tr>
                         </>
@@ -2489,6 +2674,9 @@ function PasswordProtection({ onSuccess, onCancel }) {
     }
     
     if (password === storedPassword) {
+      // Set authentication session (expires in 2 hours)
+      const expiryTime = new Date().getTime() + (2 * 60 * 60 * 1000);
+      localStorage.setItem('adminAuthExpiry', expiryTime.toString());
       onSuccess();
     } else {
       setError('Incorrect password. Please try again.');
@@ -2572,10 +2760,39 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [previousView, setPreviousView] = useState('dashboard');
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // Check if user is already authenticated (session management)
+    const authExpiry = localStorage.getItem('adminAuthExpiry');
+    const currentTime = new Date().getTime();
+    return authExpiry && currentTime < parseInt(authExpiry);
+  });
 
   useEffect(() => {
     loadItems();
   }, []);
+
+  // Check authentication expiry periodically
+  useEffect(() => {
+    const checkAuthExpiry = () => {
+      const authExpiry = localStorage.getItem('adminAuthExpiry');
+      const currentTime = new Date().getTime();
+      
+      if (authExpiry && currentTime >= parseInt(authExpiry)) {
+        // Session expired, log out user
+        localStorage.removeItem('adminAuthExpiry');
+        setIsAuthenticated(false);
+        if (view === 'purchase-management') {
+          setView('dashboard');
+        }
+      }
+    };
+
+    // Check immediately and then every 30 seconds
+    checkAuthExpiry();
+    const interval = setInterval(checkAuthExpiry, 30000);
+
+    return () => clearInterval(interval);
+  }, [view]);
 
   async function loadItems() {
     try {
@@ -2642,12 +2859,20 @@ function App() {
 
   function handlePasswordSuccess() {
     setShowPasswordPrompt(false);
+    setIsAuthenticated(true);
     setView('purchase-management');
   }
 
   function handlePasswordCancel() {
     setShowPasswordPrompt(false);
     setView(previousView);
+  }
+
+  function handleLogout() {
+    // Clear authentication session
+    localStorage.removeItem('adminAuthExpiry');
+    setIsAuthenticated(false);
+    setView('dashboard');
   }
 
   function handleNavigation(section) {
@@ -2667,8 +2892,20 @@ function App() {
         setShowAdd(true);
         break;
       case 'purchase-management':
-        setPreviousView(view);
-        setShowPasswordPrompt(true);
+        // Check if user is already authenticated
+        const authExpiry = localStorage.getItem('adminAuthExpiry');
+        const currentTime = new Date().getTime();
+        const isStillAuthenticated = authExpiry && currentTime < parseInt(authExpiry);
+        
+        if (isStillAuthenticated) {
+          // User is authenticated, go directly to admin portal
+          setView('purchase-management');
+        } else {
+          // User needs to authenticate
+          setPreviousView(view);
+          setShowPasswordPrompt(true);
+          setIsAuthenticated(false);
+        }
         break;
       case 'settings':
         console.log('Settings clicked');
@@ -2716,11 +2953,28 @@ function App() {
               <button
                 className="btn secondary-btn"
                 onClick={() => {
-                  setPreviousView(view);
-                  setShowPasswordPrompt(true);
+                  // Check if user is already authenticated
+                  const authExpiry = localStorage.getItem('adminAuthExpiry');
+                  const currentTime = new Date().getTime();
+                  const isStillAuthenticated = authExpiry && currentTime < parseInt(authExpiry);
+                  
+                  if (isStillAuthenticated) {
+                    // User is authenticated, go directly to admin portal
+                    setView('purchase-management');
+                  } else {
+                    // User needs to authenticate
+                    setPreviousView(view);
+                    setShowPasswordPrompt(true);
+                    setIsAuthenticated(false);
+                  }
                 }}
               >
-                🔒 Admin Portal
+                {(() => {
+                  const authExpiry = localStorage.getItem('adminAuthExpiry');
+                  const currentTime = new Date().getTime();
+                  const isStillAuthenticated = authExpiry && currentTime < parseInt(authExpiry);
+                  return isStillAuthenticated ? '🔓 Admin Portal' : '🔒 Admin Portal';
+                })()}
               </button>
             </div>
 

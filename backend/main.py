@@ -132,6 +132,35 @@ def get_invoices_by_date(date: str = Query(..., description="YYYY-MM-DD"), db: S
     invoices = db.query(models.Invoice).filter(models.Invoice.created_at >= day_start, models.Invoice.created_at < day_end).all()
     return invoices
 
+@app.put("/invoices/{invoice_id}/payment", response_model=schemas.InvoiceResponse)
+def update_invoice_payment(invoice_id: int, payment_update: schemas.PaymentUpdate, db: Session = Depends(get_db)):
+    """Update payment status for an invoice"""
+    updated_invoice = crud.update_invoice_payment(db, invoice_id, payment_update)
+    if not updated_invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return updated_invoice
+
+@app.post("/customers/{customer_id}/payment")
+def process_customer_payment(customer_id: int, payment: schemas.CustomerPayment, db: Session = Depends(get_db)):
+    """Process payment for a customer across multiple invoices"""
+    # Ensure customer_id matches the payment
+    payment.customer_id = customer_id
+    
+    result = crud.process_customer_payment(db, payment)
+    return {
+        "success": True,
+        "message": f"Payment of Rs {payment.payment_amount} applied to {result['updated_invoices']} invoices",
+        "details": result
+    }
+
+@app.put("/invoices/{invoice_id}/assign-customer", response_model=schemas.InvoiceResponse)
+def assign_invoice_to_customer(invoice_id: int, assignment: schemas.InvoiceCustomerAssignment, db: Session = Depends(get_db)):
+    """Assign an existing invoice to a customer"""
+    updated_invoice = crud.assign_invoice_to_customer(db, invoice_id, assignment)
+    if not updated_invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return updated_invoice
+
 # Customer endpoints
 @app.get("/customers", response_model=List[schemas.CustomerResponse])
 def list_customers(db: Session = Depends(get_db)):

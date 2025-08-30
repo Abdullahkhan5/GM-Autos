@@ -89,4 +89,24 @@ export async function fetchCustomerOutstandingBalance(customerId) {
   const res = await fetch(`${API_URL}/customers/${customerId}/outstanding-balance`);
   if (!res.ok) throw new Error('Failed to fetch customer outstanding balance');
   return res.json();
+}
+
+export async function updateInvoicePayment(invoiceId, amountPaid) {
+  const res = await fetch(`${API_URL}/invoices/${invoiceId}/payment`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount_paid: amountPaid }),
+  });
+  if (!res.ok) throw new Error('Failed to update invoice payment');
+  return res.json();
+}
+
+export async function processCustomerPayment(customerId, paymentAmount) {
+  const res = await fetch(`${API_URL}/customers/${customerId}/payment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ customer_id: customerId, payment_amount: paymentAmount }),
+  });
+  if (!res.ok) throw new Error('Failed to process customer payment');
+  return res.json();
 } 

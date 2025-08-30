@@ -21,6 +21,7 @@ function Dashboard({ onNavigate }) {
   });
   // Add this after the dashboardData state
   const [lowStockItemsList, setLowStockItemsList] = useState([]);
+  const [lastLoadTime, setLastLoadTime] = useState(0);
 
   useEffect(() => {
     loadDashboardData();
@@ -36,7 +37,14 @@ function Dashboard({ onNavigate }) {
 
   const loadDashboardData = async () => {
     try {
+      // Simple cache: don't reload if we loaded less than 30 seconds ago
+      const currentTime = Date.now();
+      if (currentTime - lastLoadTime < 30000 && !dashboardData.loading) {
+        return;
+      }
+
       setDashboardData(prev => ({ ...prev, loading: true, error: null }));
+      setLastLoadTime(currentTime);
       
       // Fetch all required data with error handling
       let items = [];
@@ -137,14 +145,8 @@ function Dashboard({ onNavigate }) {
         revenueTrend = previousMonthRevenue > 0 ? ((monthlyRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 : 0;
       }
 
-      // Get recent sales (last 5 days of invoices, default to empty array)
-      let recentSales = [];
-      try {
-        recentSales = await getRecentSales();
-      } catch (recentSalesError) {
-        console.error('Error fetching recent sales:', recentSalesError);
-        recentSales = [];
-      }
+      // Skip recent sales for faster loading - can be loaded separately if needed
+      const recentSales = [];
 
       // Set low stock items list (quantity < 10)
       setLowStockItemsList(items.filter(item => (parseInt(item.quantity) || 0) < 10));
@@ -180,18 +182,19 @@ function Dashboard({ onNavigate }) {
         recentDates.push(date.toISOString().slice(0, 10));
       }
 
-      const allInvoices = [];
-      for (const date of recentDates) {
+      // Fetch all dates in parallel for better performance
+      const invoicePromises = recentDates.map(async (date) => {
         try {
           const invoices = await fetchInvoicesByDate(date);
-          if (invoices && Array.isArray(invoices) && invoices.length > 0) {
-            allInvoices.push(...invoices);
-          }
+          return invoices && Array.isArray(invoices) ? invoices : [];
         } catch (error) {
           console.log(`No invoices found for ${date}`);
-          continue;
+          return [];
         }
-      }
+      });
+
+      const invoiceArrays = await Promise.all(invoicePromises);
+      const allInvoices = invoiceArrays.flat();
 
       return allInvoices
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
