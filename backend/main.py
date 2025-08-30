@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 import os
-from . import models, schemas, crud, database
+import models, schemas, crud, database
 from typing import List, Optional
 from shutil import copyfileobj
 

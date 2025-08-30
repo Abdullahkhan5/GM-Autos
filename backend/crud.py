@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
+import models, schemas
 from typing import List, Optional
 from sqlalchemy import func
 
@@ -61,7 +61,7 @@ def delete_customer(db: Session, customer_id: int) -> bool:
     return True
 
 def create_invoice(db: Session, invoice_data: 'schemas.InvoiceCreate'):
-    from .models import Invoice, InvoiceItem, Item
+    from models import Invoice, InvoiceItem, Item
     invoice = Invoice(
         customer_id=invoice_data.customer_id,
         client_name=invoice_data.client_name,
@@ -86,7 +86,7 @@ def create_invoice(db: Session, invoice_data: 'schemas.InvoiceCreate'):
 
 def get_customer_outstanding_balance(db: Session, customer_id: int) -> float:
     """Calculate total outstanding balance for a customer"""
-    from .models import Invoice
+    from models import Invoice
     result = db.query(
         func.sum(func.coalesce(Invoice.outstanding_balance, 0))
     ).filter(
@@ -96,7 +96,7 @@ def get_customer_outstanding_balance(db: Session, customer_id: int) -> float:
     return result or 0.0
 
 def get_sales_tracker(db: Session):
-    from .models import Invoice, InvoiceItem, Item
+    from models import Invoice, InvoiceItem, Item
     results = (
         db.query(
             Invoice.created_at.label('date'),
