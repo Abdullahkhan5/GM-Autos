@@ -482,29 +482,6 @@ function Dashboard({ onNavigate }) {
           ))}
         </nav>
 
-        {/* Sidebar Footer */}
-        <div style={{ padding: '16px', borderTop: '1px solid #e0e0e0' }}>
-          <button
-            onClick={() => handleNavigation('settings')}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              color: '#333',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '500'
-            }}
-          >
-            <span style={{ fontSize: '20px' }}>⚙️</span>
-            <span>Settings</span>
-          </button>
-        </div>
       </div>
 
       {/* Main Content */}
@@ -637,6 +614,68 @@ function Dashboard({ onNavigate }) {
           </div>
         ))
       )}
+    </div>
+  </div>
+
+  {/* Quick Actions Section */}
+  <div className="dashboard-quick-actions" style={{
+    background: 'white',
+    borderRadius: '16px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    margin: '0 auto 32px',
+    maxWidth: '1200px',
+    padding: '32px 24px',
+    border: '1px solid #f3f3f3',
+    marginTop: '32px'
+  }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+      <span style={{ fontSize: '20px' }}>⚡</span>
+      <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#222' }}>Quick Actions</h2>
+    </div>
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+      gap: '16px' 
+    }}>
+      <button
+        onClick={() => handleNavigation('inventory')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: '#f8f9fa',
+          border: '1px solid #e9ecef',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          fontSize: '14px',
+          fontWeight: 500
+        }}
+      >
+        <span style={{ fontSize: '20px' }}>📦</span>
+        <span>View Inventory</span>
+      </button>
+      
+      <button
+        onClick={() => handleNavigation('purchase-management')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: '#f8f9fa',
+          border: '1px solid #e9ecef',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          fontSize: '14px',
+          fontWeight: 500
+        }}
+      >
+        <span style={{ fontSize: '20px' }}>💰</span>
+        <span>Admin Portal</span>
+      </button>
     </div>
   </div>
 

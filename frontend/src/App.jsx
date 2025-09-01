@@ -1664,7 +1664,7 @@ function ChangePassword({ onSuccess, onCancel }) {
   function handleSubmit(e) {
     e.preventDefault();
     
-    const storedPassword = localStorage.getItem('adminPassword');
+    const storedPassword = localStorage.getItem('sitePassword');
     
     if (currentPassword !== storedPassword) {
       setError('Current password is incorrect.');
@@ -1682,7 +1682,7 @@ function ChangePassword({ onSuccess, onCancel }) {
     }
     
     // Update password in localStorage
-    localStorage.setItem('adminPassword', newPassword);
+    localStorage.setItem('sitePassword', newPassword);
     onSuccess();
   }
 
@@ -1691,7 +1691,7 @@ function ChangePassword({ onSuccess, onCancel }) {
       <div className="modern-inventory-form-container">
         <form className="modern-inventory-form" onSubmit={handleSubmit}>
           <h2 className="modern-inventory-form-title">
-            🔑 Change Admin Password
+            🔑 Change Site Password
           </h2>
 
           <div className="modern-inventory-form-group">
@@ -1756,61 +1756,6 @@ function ChangePassword({ onSuccess, onCancel }) {
   );
 }
 
-function SessionTimer() {
-  const [timeLeft, setTimeLeft] = useState('');
-
-  useEffect(() => {
-    const updateTimer = () => {
-      const authExpiry = localStorage.getItem('adminAuthExpiry');
-      if (!authExpiry) {
-        setTimeLeft('');
-        return;
-      }
-
-      const currentTime = new Date().getTime();
-      const expiryTime = parseInt(authExpiry);
-      const timeDiff = expiryTime - currentTime;
-
-      if (timeDiff <= 0) {
-        setTimeLeft('Expired');
-        return;
-      }
-
-      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
-      if (hours > 0) {
-        setTimeLeft(`${hours}h ${minutes}m`);
-      } else if (minutes > 0) {
-        setTimeLeft(`${minutes}m ${seconds}s`);
-      } else {
-        setTimeLeft(`${seconds}s`);
-      }
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  if (!timeLeft) return null;
-
-  return (
-    <div style={{
-      padding: '0.5rem 1rem',
-      background: timeLeft.includes('Expired') ? '#dc2626' : 
-                  (parseInt(timeLeft) <= 5 && timeLeft.includes('s')) ? '#f59e0b' : '#059669',
-      color: 'white',
-      borderRadius: '6px',
-      fontSize: '0.875rem',
-      fontWeight: '500'
-    }}>
-      🕒 {timeLeft}
-    </div>
-  );
-}
 
 function AdminPortal({ items, onAddItem, onEditItem, onDeleteItem, loading, onViewDetails, onInvoiceCreated, onBack }) {
   const [adminView, setAdminView] = useState('overview');
@@ -1872,13 +1817,12 @@ function AdminPortal({ items, onAddItem, onEditItem, onDeleteItem, loading, onVi
           <p className="modern-inventory-page-description">Administrative tools and management</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <SessionTimer />
           <button 
             onClick={() => setShowChangePassword(true)}
             className="modern-inventory-add-btn"
             style={{ background: '#f59e0b', borderColor: '#f59e0b' }}
           >
-            🔑 Change Password
+            🔑 Change Site Password
           </button>
         </div>
       </div>
@@ -2583,7 +2527,7 @@ function PasswordSetup({ onSuccess, onCancel }) {
     }
     
     // Save password to localStorage
-    localStorage.setItem('adminPassword', newPassword);
+    localStorage.setItem('sitePassword', newPassword);
     onSuccess();
   }
 
@@ -2592,7 +2536,7 @@ function PasswordSetup({ onSuccess, onCancel }) {
       <div className="modern-inventory-form-container">
         <form className="modern-inventory-form" onSubmit={handleSubmit}>
           <h2 className="modern-inventory-form-title">
-            🔐 Set Admin Password
+            🔐 Set Site Password
           </h2>
           
           <p style={{ 
@@ -2601,7 +2545,7 @@ function PasswordSetup({ onSuccess, onCancel }) {
             marginBottom: '1.5rem',
             fontSize: '0.9rem'
           }}>
-            No admin password has been set. Please create a secure password to protect Purchase Management.
+            No site password has been set. Please create a secure password to access the application.
           </p>
 
           <div className="modern-inventory-form-group">
@@ -2660,13 +2604,13 @@ function PasswordProtection({ onSuccess, onCancel }) {
   const [showSetup, setShowSetup] = useState(false);
 
   // Get password from localStorage - no default password for security
-  const getAdminPassword = () => {
-    return localStorage.getItem('adminPassword');
+  const getSitePassword = () => {
+    return localStorage.getItem('sitePassword');
   };
 
   function handleSubmit(e) {
     e.preventDefault();
-    const storedPassword = getAdminPassword();
+    const storedPassword = getSitePassword();
     
     if (!storedPassword) {
       setShowSetup(true);
@@ -2676,7 +2620,7 @@ function PasswordProtection({ onSuccess, onCancel }) {
     if (password === storedPassword) {
       // Set authentication session (expires in 2 hours)
       const expiryTime = new Date().getTime() + (2 * 60 * 60 * 1000);
-      localStorage.setItem('adminAuthExpiry', expiryTime.toString());
+      // Session management is handled by parent component
       onSuccess();
     } else {
       setError('Incorrect password. Please try again.');
@@ -2711,18 +2655,18 @@ function PasswordProtection({ onSuccess, onCancel }) {
             fontSize: '0.9rem'
           }}>
             Purchase Management contains sensitive pricing information.
-            Please enter the admin password to continue.
+            Please enter the site password to continue.
           </p>
 
           <div className="modern-inventory-form-group">
-            <label className="modern-inventory-form-label">Admin Password</label>
+            <label className="modern-inventory-form-label">Site Password</label>
             <input 
               className="modern-inventory-form-input"
               type="password"
               value={password} 
               onChange={e => setPassword(e.target.value)} 
               required 
-              placeholder="Enter admin password"
+              placeholder="Enter site password"
               autoFocus
             />
             {error && (
@@ -2759,31 +2703,32 @@ function App() {
   const [view, setView] = useState('dashboard');
   const [selectedDate, setSelectedDate] = useState(null);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
-  const [previousView, setPreviousView] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     // Check if user is already authenticated (session management)
-    const authExpiry = localStorage.getItem('adminAuthExpiry');
+    const authExpiry = localStorage.getItem('authExpiry');
     const currentTime = new Date().getTime();
     return authExpiry && currentTime < parseInt(authExpiry);
   });
 
   useEffect(() => {
+    // Show password prompt if not authenticated on load
+    if (!isAuthenticated) {
+      setShowPasswordPrompt(true);
+    }
     loadItems();
   }, []);
 
   // Check authentication expiry periodically
   useEffect(() => {
     const checkAuthExpiry = () => {
-      const authExpiry = localStorage.getItem('adminAuthExpiry');
+      const authExpiry = localStorage.getItem('authExpiry');
       const currentTime = new Date().getTime();
       
       if (authExpiry && currentTime >= parseInt(authExpiry)) {
         // Session expired, log out user
-        localStorage.removeItem('adminAuthExpiry');
+        localStorage.removeItem('authExpiry');
         setIsAuthenticated(false);
-        if (view === 'purchase-management') {
-          setView('dashboard');
-        }
+        setShowPasswordPrompt(true);
       }
     };
 
@@ -2792,7 +2737,7 @@ function App() {
     const interval = setInterval(checkAuthExpiry, 30000);
 
     return () => clearInterval(interval);
-  }, [view]);
+  }, []);
 
   async function loadItems() {
     try {
@@ -2860,19 +2805,22 @@ function App() {
   function handlePasswordSuccess() {
     setShowPasswordPrompt(false);
     setIsAuthenticated(true);
-    setView('purchase-management');
+    // Set 2-hour expiry (2 hours * 60 minutes * 60 seconds * 1000 milliseconds)
+    const twoHours = 2 * 60 * 60 * 1000;
+    const expiryTime = new Date().getTime() + twoHours;
+    localStorage.setItem('authExpiry', expiryTime.toString());
   }
 
   function handlePasswordCancel() {
-    setShowPasswordPrompt(false);
-    setView(previousView);
+    // User cancelled login, stay on password prompt
+    setShowPasswordPrompt(true);
   }
 
   function handleLogout() {
     // Clear authentication session
-    localStorage.removeItem('adminAuthExpiry');
+    localStorage.removeItem('authExpiry');
     setIsAuthenticated(false);
-    setView('dashboard');
+    setShowPasswordPrompt(true);
   }
 
   function handleNavigation(section) {
@@ -2892,27 +2840,29 @@ function App() {
         setShowAdd(true);
         break;
       case 'purchase-management':
-        // Check if user is already authenticated
-        const authExpiry = localStorage.getItem('adminAuthExpiry');
-        const currentTime = new Date().getTime();
-        const isStillAuthenticated = authExpiry && currentTime < parseInt(authExpiry);
-        
-        if (isStillAuthenticated) {
-          // User is authenticated, go directly to admin portal
-          setView('purchase-management');
-        } else {
-          // User needs to authenticate
-          setPreviousView(view);
-          setShowPasswordPrompt(true);
-          setIsAuthenticated(false);
-        }
+        setView('purchase-management');
         break;
       case 'settings':
         console.log('Settings clicked');
         break;
+      case 'logout':
+        handleLogout();
+        break;
       default:
         setView('dashboard');
     }
+  }
+
+  // Show password protection if not authenticated or explicitly prompted
+  if (!isAuthenticated || showPasswordPrompt) {
+    return (
+      <div className="App">
+        <PasswordProtection 
+          onSuccess={handlePasswordSuccess}
+          onCancel={handlePasswordCancel}
+        />
+      </div>
+    );
   }
 
   return (
@@ -2948,33 +2898,13 @@ function App() {
                   setEditItem(null);
                 }}
               >
-                View Inventory
+                📦 Inventory
               </button>
-              <button
+              <button 
                 className="btn secondary-btn"
-                onClick={() => {
-                  // Check if user is already authenticated
-                  const authExpiry = localStorage.getItem('adminAuthExpiry');
-                  const currentTime = new Date().getTime();
-                  const isStillAuthenticated = authExpiry && currentTime < parseInt(authExpiry);
-                  
-                  if (isStillAuthenticated) {
-                    // User is authenticated, go directly to admin portal
-                    setView('purchase-management');
-                  } else {
-                    // User needs to authenticate
-                    setPreviousView(view);
-                    setShowPasswordPrompt(true);
-                    setIsAuthenticated(false);
-                  }
-                }}
+                onClick={() => setView('purchase-management')}
               >
-                {(() => {
-                  const authExpiry = localStorage.getItem('adminAuthExpiry');
-                  const currentTime = new Date().getTime();
-                  const isStillAuthenticated = authExpiry && currentTime < parseInt(authExpiry);
-                  return isStillAuthenticated ? '🔓 Admin Portal' : '🔒 Admin Portal';
-                })()}
+                💰 Admin Portal
               </button>
             </div>
 
@@ -3018,13 +2948,6 @@ function App() {
         </>
       )}
 
-      {/* Show Password Protection - Available on all views */}
-      {showPasswordPrompt && (
-        <PasswordProtection 
-          onSuccess={handlePasswordSuccess}
-          onCancel={handlePasswordCancel}
-        />
-      )}
     </div>
   );
 }
